@@ -28,7 +28,7 @@ class _CrudState extends State<Crud> {
 
   @override
   Widget build(BuildContext context) {
-    void productDialog() {
+    void productDialog({String ? id,String ? name,String ? img,int ? qty,int ? unitPrice,int ? totalPrice,required bool isupdate}) {
       TextEditingController productNameController = TextEditingController();
       TextEditingController productQTYController = TextEditingController();
       TextEditingController productImageController = TextEditingController();
@@ -37,11 +37,17 @@ class _CrudState extends State<Crud> {
       TextEditingController productTotalPriceController =
           TextEditingController();
 
+      productNameController.text = name ?? '';
+      productImageController.text = img ?? '';
+      productQTYController.text = qty != null ? qty.toString() : '0';
+      productUnitPriceController.text = unitPrice != null ? unitPrice.toString() : '0';
+      productTotalPriceController.text = totalPrice != null ? totalPrice.toString() : '0';
+
       showDialog(
         context: context,
         builder:
             (context) => AlertDialog(
-              title: Text('Add product'),
+              title: Text(isupdate ? 'Edit product' : 'Add product'),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -78,8 +84,40 @@ class _CrudState extends State<Crud> {
                       ),
                       SizedBox(width: 5),
                       ElevatedButton(
-                        onPressed: () {},
-                        child: Text('Add Product'),
+                          onPressed: () async {
+
+                            productcontroller.CreateUpdateProducts(
+                                productNameController.text,
+                                productImageController.text,
+                                int.parse(productQTYController.text.trim()),
+                                int.parse(
+                                    productUnitPriceController.text.trim()),
+                                int.parse(
+                                    productTotalPriceController.text.trim()),
+                                id,isupdate
+                            ) .then((value) async {
+                              if (value) {
+                                await productcontroller.fetchProducts();
+                                setState(() {});
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                  content: Text(isupdate ? 'product updated ': 'Product Created'),
+                                  duration: Duration(seconds: 2),
+                                ));
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                  content: Text('Something wrong...!'),
+                                  duration: Duration(seconds: 2),
+                                ));
+                              }
+                            });
+
+                            Navigator.pop(context);
+                            await fetchData();
+                            setState(() {
+
+                            });
+                          },
+                        child: Text(isupdate ? 'Update Product': 'Add product'),
                       ),
                     ],
                   ),
@@ -106,7 +144,7 @@ class _CrudState extends State<Crud> {
           var product = productcontroller.products[index];
           return ProductCard(
             onEdit: () {
-              productDialog();
+              productDialog(name:product.productName ,img:product.img ,id:product.sId ,unitPrice:product.unitPrice ,totalPrice:product.totalPrice ,qty:product.qty ,isupdate: true);
             },
             onDelete: () {
               productcontroller.DeleteProducts(product.sId.toString())
@@ -131,7 +169,7 @@ class _CrudState extends State<Crud> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => productDialog(),
+        onPressed: () => productDialog(isupdate: false),
         child: Icon(Icons.add),
       ),
     );
